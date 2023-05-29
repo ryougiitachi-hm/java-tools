@@ -1,0 +1,19 @@
+syntax = "proto2";
+
+package per.itachi.java.tools.danmuku;
+
+option java_multiple_files = true;
+option java_package = "per.itachi.java.tools.danmuku.infra.protobuf.iqiyi";
+//option java_outer_classname = "StudentListProtos";
+
+message BulletInfo {
+  optional string content = 2; // becomes awesomeField
+}
+
+message Entry {
+  repeated BulletInfo bulletInfo = 2; // becomes awesomeField
+}
+
+message Danmuku {
+  repeated Entry entry = 6; // becomes awesomeField
+}
