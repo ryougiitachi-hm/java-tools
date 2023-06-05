@@ -24,6 +24,7 @@
         <brotli.version>0.1.2</brotli.version>
         <google.protobuf.version>3.23.1</google.protobuf.version>
         <spring.boot.version>2.7.12</spring.boot.version><!-- 2.7.12,3.1.0 -->
+        <jsoup.version>1.16.1</jsoup.version>
         <!-- plugins -->
         <codehaus.mojo.exec.version>3.1.0</codehaus.mojo.exec.version>
     </properties>
@@ -82,6 +83,11 @@
                 <version>${spring.boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>${jsoup.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

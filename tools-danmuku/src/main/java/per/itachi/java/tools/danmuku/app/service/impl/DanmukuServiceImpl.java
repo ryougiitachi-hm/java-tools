@@ -1,68 +1,68 @@
 package per.itachi.java.tools.danmuku.app.service.impl;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.brotli.dec.BrotliInputStream;
 import org.springframework.stereotype.Service;
-import per.itachi.java.tools.danmuku.app.port.HttpDownloaderPort;
+import per.itachi.java.tools.danmuku.app.dto.UrlInfoDTO;
+import per.itachi.java.tools.danmuku.app.exception.AppException;
+import per.itachi.java.tools.danmuku.app.processor.DanmukuProcessorSelector;
 import per.itachi.java.tools.danmuku.app.service.DanmukuService;
-import per.itachi.java.tools.danmuku.infra.protobuf.iqiyi.BulletInfo;
-import per.itachi.java.tools.danmuku.infra.protobuf.iqiyi.Danmuku;
-import per.itachi.java.tools.danmuku.infra.protobuf.iqiyi.Entry;
 
 @Slf4j
 @Service
 public class DanmukuServiceImpl implements DanmukuService {
 
-    private static final String PORTAL_IQIYI = "iqiyi";
-
     @Resource
     private Map<String, String> portalUrlMappings;
 
     @Resource
-    private HttpDownloaderPort httpDownloaderPort;
+    private DanmukuProcessorSelector danmukuProcessorSelector;
 
     @Override
     public void process(String strUrl) {
-        try {
-            URL url = new URL(strUrl);
-            String portal = portalUrlMappings.get(url.getHost());
-            if (portal.equals(PORTAL_IQIYI)) {
-                String strFilePath = httpDownloaderPort.parseAsFile(strUrl, "", "");
-                try(InputStream danmukuis = new BrotliInputStream(Files.newInputStream(Paths.get(strFilePath)))) {
-                    Danmuku danmuku = Danmuku.parseFrom(danmukuis);
-//                    log.info("danmuku={}. ", danmuku);
-                    log.info("The danmuku info is as follows: ");
-                    log.info("danmuku.entry.count={}. ", danmuku.getEntryCount());
-                    int countOfBullet = 0;
-                    for (Entry entry : danmuku.getEntryList()) {
-                        log.info("danmuku.entry.bulletInfo.count={}. ", entry.getBulletInfoCount());
-                        for (BulletInfo bulletInfo : entry.getBulletInfoList()) {
-                            log.info("danmuku.entry.bulletInfo.content={}. ", bulletInfo.getContent());
-                        }
-                        countOfBullet += entry.getBulletInfoCount();
-                    }
-                    log.info("The total number of bulletInfo is {}. ", countOfBullet);
-                }
-                catch (IOException e) {
-                    log.error("Error occurred. ", e);
-                }
-            }
-        }
-        catch (MalformedURLException e) {
-            log.error("Error occurred. ", e);
-        }
+        UrlInfoDTO url = parseUrl(strUrl);
+        String portal = portalUrlMappings.get(url.getHost());
+        danmukuProcessorSelector.handle(portal, url);
     }
 
     @Override
     public void process(String url, String portal) {
     }
 
+    private UrlInfoDTO parseUrl(String originalUrl) {
+        try {
+            URL url = new URL(originalUrl);
+            List<String> paths = Collections.emptyList();
+            String strPaths = url.getPath();
+            if(strPaths != null && strPaths.trim().length() > 0) {
+                strPaths = strPaths.trim();
+                if (strPaths.charAt(0) == '/') {
+                    if (strPaths.length() == 1) {
+                        paths = Collections.emptyList();
+                    }
+                    else {
+                        paths = Arrays.asList(strPaths.substring(1).split("/"));
+                    }
+                }
+            }
+            UrlInfoDTO dto = new UrlInfoDTO();
+            dto.setOriginalUrl(originalUrl);
+            dto.setScheme(url.getProtocol());
+            dto.setHost(url.getHost());
+            dto.setPort(url.getPort());
+            dto.setPaths(paths);
+            dto.setParams(url.getQuery());
+            return dto;
+        }
+        catch (MalformedURLException e) {
+            log.error("Error occurred. ", e);
+            throw new AppException("Error occurred. ", e);
+        }
+    }
 }

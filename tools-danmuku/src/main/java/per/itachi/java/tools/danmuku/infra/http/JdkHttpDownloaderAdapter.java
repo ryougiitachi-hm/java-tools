@@ -50,7 +50,7 @@ public class JdkHttpDownloaderAdapter implements HttpDownloaderPort {
                 urlConnection = (HttpURLConnection)url.openConnection();
                 urlConnection.connect();
 //                String contentEncoding = urlConnection.getHeaderField(HTTP_HEADER_CONTENT_ENCODING);
-                log.info("Start downloading url={}, ", strUrl);
+                log.info("Connected repsonseCode={}, and started downloading with url={}, ", urlConnection.getResponseCode(), strUrl);
                 String strPath = url.getPath();
                 List<String> listPath = Arrays.asList(strPath.split("/"));
                 String strOutputName = listPath.isEmpty() ? url.getHost() : listPath.get(listPath.size() - 1);
