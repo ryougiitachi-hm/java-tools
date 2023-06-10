@@ -124,7 +124,7 @@ public class BilibiliMediaInfoJson {
     private Map<String, String> payPack;
 
     @JsonProperty
-    private Boolean pgcType;
+    private String pgcType;
 
     @JsonProperty
     private Boolean epSpMode;
@@ -142,5 +142,5 @@ public class BilibiliMediaInfoJson {
     private String staff;
 
     @JsonProperty
-    private List<String> playStrategy;
+    private Object playStrategy; // sometimes [] sometimes {}...
 }

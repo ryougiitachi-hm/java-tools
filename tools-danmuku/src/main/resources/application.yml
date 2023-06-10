@@ -15,3 +15,29 @@ infra:
     strategy: JDK
     bufferSize: 32768
     outputDir: ${INFRA_HTTP_OUTPUT_DIR}
+    headers:
+      default:
+        User-Agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.37"
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9"
+        Accept-Encoding: "gzip, deflate, br"
+        Accept-Language: "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6"
+#        Cache-Control: "no-cache"
+        Pragma: no-cache
+        Upgrade-Insecure-Requests: 1
+      "www.bilibili.com":
+        Sec-Ch-Ua-Mobile: ?0
+        Sec-Ch-Ua-Platform: "Windows"
+        Sec-Ch-Ua: -|
+          "Not.A/Brand";v="8", "Chromium";v="114", "Microsoft Edge";v="114"
+        Sec-Fetch-Dest: empty
+        Sec-Fetch-Mode: cors
+        Sec-Fetch-Site: same-site
+    mime-extension-mappings:
+      # json
+      "application/json": .json
+      "text/json": .json
+      "text/html": .html
+      # xml
+      "application/xml": .xml
+      "text/xml": .xml
+

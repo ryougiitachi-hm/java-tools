@@ -16,7 +16,7 @@ public class BilibiliQueryStateDataJson {
 
     private BilibiliMediaInfoJson mediaInfo;
 
-    private Map<String, Object> sectionsMap;
+    private Map<String, BilibiliSectionEntryJson> sectionsMap;
 
     private List<Integer> publicOrderSectionIds;
 

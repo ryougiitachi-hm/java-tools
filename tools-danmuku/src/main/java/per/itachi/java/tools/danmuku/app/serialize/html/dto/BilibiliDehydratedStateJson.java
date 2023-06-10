@@ -15,5 +15,5 @@ public class BilibiliDehydratedStateJson {
      * */
     private List<String> mutations;
 
-    private List<BilibiliDehydratedStateQueryJson> querys;
+    private List<BilibiliDehydratedStateQueryJson> queries;
 }

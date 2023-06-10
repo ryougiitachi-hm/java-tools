@@ -18,7 +18,7 @@ import per.itachi.java.tools.danmuku.app.serialize.html.dto.BilibiliExtractedHtm
 @Component
 public class BilibiliBangumiHtmlParser implements HtmlParser<BilibiliExtractedHtmlDojo> {
 
-    private static final String HTML_SELECTOR_BV_ID = "body a.mediainfo_avLink__bN7nf";
+    private static final String HTML_SELECTOR_BV_ID = "a.mediainfo_avLink__bN7nf";
 
 //    private static final String HTML_SELECTOR_MAIN_TITLE = "";
 
@@ -41,7 +41,7 @@ public class BilibiliBangumiHtmlParser implements HtmlParser<BilibiliExtractedHt
         }
         catch (IOException e) {
             log.error("", e);
-            throw new InvalidHtmlException(String.format("Error occurred when opening html %s", htmlFilePath));
+            throw new InvalidHtmlException(String.format("Error occurred when opening html %s", htmlFilePath), e);
         }
     }
 
@@ -57,11 +57,11 @@ public class BilibiliBangumiHtmlParser implements HtmlParser<BilibiliExtractedHt
             BilibiliExtractedHtmlDojo htmlDojo = new BilibiliExtractedHtmlDojo();
             htmlDojo.setBvid(elementBvId == null ? "" : elementBvId.text());
             htmlDojo.setMainTitle(headTitle == null ? "untitled" : headTitle.text());
-            htmlDojo.setNextDataJson(elementNextData == null ? "null" : elementNextData.text());
+            htmlDojo.setNextDataJson(elementNextData == null ? "null" : elementNextData.data());
             return htmlDojo; // TODO: to be improved for raw type.
         }
         catch (IOException e) {
-            throw new InvalidHtmlException("Error occurred when parsing html input stream");
+            throw new InvalidHtmlException("Error occurred when parsing html input stream", e);
         }
     }
 }

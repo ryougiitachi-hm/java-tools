@@ -12,13 +12,20 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-import java.util.zip.DeflaterInputStream;
+import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.Inflater;
+import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipInputStream;
+import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.brotli.dec.BrotliInputStream;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import per.itachi.java.tools.danmuku.app.exception.AdapterException;
 import per.itachi.java.tools.danmuku.app.port.HttpDownloaderPort;
@@ -29,6 +36,24 @@ import per.itachi.java.tools.danmuku.app.port.HttpDownloaderPort;
 @Slf4j
 @Component
 public class JdkHttpDownloaderAdapter implements HttpDownloaderPort {
+
+    private static final Pattern REGEX_INVALID_PATH_CHARACTERS = Pattern.compile("[\\\\/:\\*\\?\\|<>]");
+
+    private static final String HTTP_HEADER_COLON_AUTHORITY = ":Authority";
+
+    private static final String HTTP_HEADER_COLON_METHOD = ":Method";
+
+    private static final String HTTP_HEADER_COLON_PATH = ":Path";
+
+    private static final String HTTP_HEADER_COLON_SCHEME = ":Scheme";
+
+    @Autowired
+    @Qualifier("headers")
+    private Map<String, Map<String, String>> headers;
+
+    @Autowired
+    @Qualifier("mimeExtensionMappings")
+    private Map<String, String> mimeExtensionMappings;
 
     @Value("${infra.http.bufferSize}")
     private int bufferSize;
@@ -41,6 +66,11 @@ public class JdkHttpDownloaderAdapter implements HttpDownloaderPort {
         return STRATEGY_JDK;
     }
 
+    @PostConstruct
+    public void init() {
+        log.info("");
+    }
+
     @Override
     public String parseAsFile(String strUrl, String outputNamePrefix, String outputNamePostfix) {
         try {
@@ -48,14 +78,18 @@ public class JdkHttpDownloaderAdapter implements HttpDownloaderPort {
             HttpURLConnection urlConnection = null;
             try {
                 urlConnection = (HttpURLConnection)url.openConnection();
+                fillHttpHeaders(urlConnection);
+                urlConnection.setRequestMethod("GET");
                 urlConnection.connect();
+                printResponseHttpHeaders(urlConnection);
 //                String contentEncoding = urlConnection.getHeaderField(HTTP_HEADER_CONTENT_ENCODING);
                 log.info("Connected repsonseCode={}, and started downloading with url={}, ", urlConnection.getResponseCode(), strUrl);
                 String strPath = url.getPath();
                 List<String> listPath = Arrays.asList(strPath.split("/"));
                 String strOutputName = listPath.isEmpty() ? url.getHost() : listPath.get(listPath.size() - 1);
+                String strOutputFileName = normalizeOutputFileName(strOutputName, outputNamePrefix, outputNamePostfix);
                 Path outputFilePath = Paths.get(outputDir,
-                        strOutputName + generateFileExtendedName(urlConnection.getContentType()));
+                        strOutputFileName + generateFileExtendedName(urlConnection.getContentType()));
                 try(InputStream inputStream = wrapInputStream(urlConnection.getContentEncoding(), urlConnection.getInputStream());
                     OutputStream outputStream = new BufferedOutputStream(Files.newOutputStream(outputFilePath), bufferSize)) {
                     byte[] buffer = new byte[bufferSize];
@@ -88,22 +122,25 @@ public class JdkHttpDownloaderAdapter implements HttpDownloaderPort {
             HttpURLConnection urlConnection = null;
             try {
                 urlConnection = (HttpURLConnection)url.openConnection();
+                fillHttpHeaders(urlConnection);
+                urlConnection.setRequestMethod("GET");
                 urlConnection.connect();
-//                String contentEncoding = urlConnection.getHeaderField(HTTP_HEADER_CONTENT_ENCODING);
+                printResponseHttpHeaders(urlConnection);
                 String strPath = url.getPath();
                 List<String> listPath = Arrays.asList(strPath.split("/"));
                 String strOutputName = listPath.isEmpty() ? url.getHost() : listPath.get(listPath.size() - 1);
+                String strOutputFileName = normalizeOutputFileName(strOutputName, outputNamePrefix, outputNamePostfix);
                 ByteArrayInputStream resultInputStream = new ByteArrayInputStream(new byte[urlConnection.getContentLength() * 10]);
                 try(InputStream inputStream = wrapInputStream(urlConnection.getContentEncoding(), urlConnection.getInputStream());
                     OutputStream outputStream = new BufferedOutputStream(Files
                             .newOutputStream(Paths.get(outputDir,
-                                    strOutputName + generateFileExtendedName(urlConnection.getContentType()))), bufferSize)) {
+                                    strOutputFileName + generateFileExtendedName(urlConnection.getContentType()))), bufferSize)) {
                     byte[] buffer = new byte[bufferSize];
                     int count = 0;
                     int countSum = 0;
                     while ((count = inputStream.read(buffer)) > 0) {
                         countSum += count;
-                        outputStream.write(buffer);
+                        outputStream.write(buffer, 0, count); // incorrect logic
                     }
                     log.info("The total size of input bytes is {}. ", countSum);
                 }
@@ -121,6 +158,40 @@ public class JdkHttpDownloaderAdapter implements HttpDownloaderPort {
         }
     }
 
+    private String normalizeOutputFileName(String outputFileName, String outputNamePrefix, String outputNamePostfix) {
+        String normalized = outputNamePrefix + "-" + outputFileName;
+        return normalized.replaceAll(REGEX_INVALID_PATH_CHARACTERS.pattern(), "");
+    }
+
+    private void fillHttpHeaders(HttpURLConnection connection) {
+        URL url = connection.getURL();
+        String host = url.getHost();
+        Map<String, String> headersDefault = headers.get("default");
+//        connection.setRequestProperty(HTTP_HEADER_COLON_AUTHORITY, url.getHost());
+//        connection.setRequestProperty(HTTP_HEADER_COLON_METHOD, "GET");
+//        connection.setRequestProperty(HTTP_HEADER_COLON_PATH, url.getPath());
+//        connection.setRequestProperty(HTTP_HEADER_COLON_SCHEME, url.getProtocol());
+        if (!CollectionUtils.isEmpty(headersDefault)) {
+            for (Map.Entry<String, String> entry : headersDefault.entrySet()) {
+                connection.setRequestProperty(entry.getKey(), entry.getValue());
+//                connection.addRequestProperty();
+            }
+        }
+        Map<String, String> headersSpecific = headers.get(host);
+        if (!CollectionUtils.isEmpty(headersSpecific)) {
+            for (Map.Entry<String, String> entry : headersSpecific.entrySet()) {
+                connection.setRequestProperty(entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    private void printResponseHttpHeaders(HttpURLConnection urlConnection) {
+        Map<String, List<String>> repsonseHeaders = urlConnection.getHeaderFields();
+        for (Map.Entry<String, List<String>> header : repsonseHeaders.entrySet()) {
+            log.info("Header {}={}", header.getKey(), header.getValue());
+        }
+    }
+
     private InputStream wrapInputStream(String contentEncoding, InputStream sourceIs)
             throws IOException {
         if (!StringUtils.hasText(contentEncoding)) {
@@ -133,9 +204,10 @@ public class JdkHttpDownloaderAdapter implements HttpDownloaderPort {
         case "zip":
             return new ZipInputStream(sourceIs);
         case "gz":
+        case "gzip":
             return new GZIPInputStream(sourceIs);
         case "deflate":
-            return new DeflaterInputStream(sourceIs);
+            return new InflaterInputStream(sourceIs, new Inflater(true)); // DeflaterInputStream
         default:
             throw new AdapterException(String.format("Unsupported content encoding, contentEncoding=%s", contentEncoding));
 //            return new BrotliInputStream(sourceIs);
@@ -156,11 +228,14 @@ public class JdkHttpDownloaderAdapter implements HttpDownloaderPort {
         if (mimeAndCharset.length == 2) {
             charset = mimeAndCharset[1].trim();
         }
-        String[] mimeLeftAndRight = mime.split("/");
-        String mimeLeft = mimeLeftAndRight[0];
-        String mimeRight = mimeLeftAndRight[1];
+//        String[] mimeLeftAndRight = mime.split("/");
+//        String mimeLeft = mimeLeftAndRight[0];
+//        String mimeRight = mimeLeftAndRight[1];
+        String extension = mimeExtensionMappings.get(mime.trim());
+        if (StringUtils.hasText(extension)) {
+            return extension;
+        }
         // it is needed to define a mapping between mime type and suffix.
         return ".dat";
     }
-
 }
