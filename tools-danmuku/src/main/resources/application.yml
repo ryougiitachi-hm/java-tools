@@ -1,15 +1,22 @@
 app:
   processor:
+    # maybe these technical parameters can be moved to infra.
+    bufferSize: 32768
+    outputDir: ${INFRA_HTTP_OUTPUT_DIR}
+    reserveMiddleFile: false
     portal-url-mappings:
       # iqiyi
       "www.iqiyi.com": iqiyi
       "iqiyi.com": iqiyi
       "cmts.iqiyi.com": iqiyi
-      # iqiyi
+      # bilibili
       "www.bilibili.com": bilibili
+      "www.bilibili.tv": bilibili
       "bilibili.com": bilibili
       "bilibili.us": bilibili
       "bilibili.tv": bilibili
+      # tencent video
+      "v.qq.com": tencent-video
 infra:
   http:
     strategy: JDK

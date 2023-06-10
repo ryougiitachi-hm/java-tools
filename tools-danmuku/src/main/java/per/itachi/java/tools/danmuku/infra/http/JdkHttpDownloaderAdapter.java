@@ -1,7 +1,7 @@
 package per.itachi.java.tools.danmuku.infra.http;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -115,46 +115,15 @@ public class JdkHttpDownloaderAdapter implements HttpDownloaderPort {
         }
     }
 
+    // InputStream can't be returned directly after closing http connenction.
     @Override
     public InputStream parseAsStream(String strUrl, String outputNamePrefix, String outputNamePostfix) {
+        String strFilePath = parseAsFile(strUrl, outputNamePrefix, outputNamePostfix);
         try {
-            URL url= new URL(strUrl);
-            HttpURLConnection urlConnection = null;
-            try {
-                urlConnection = (HttpURLConnection)url.openConnection();
-                fillHttpHeaders(urlConnection);
-                urlConnection.setRequestMethod("GET");
-                urlConnection.connect();
-                printResponseHttpHeaders(urlConnection);
-                String strPath = url.getPath();
-                List<String> listPath = Arrays.asList(strPath.split("/"));
-                String strOutputName = listPath.isEmpty() ? url.getHost() : listPath.get(listPath.size() - 1);
-                String strOutputFileName = normalizeOutputFileName(strOutputName, outputNamePrefix, outputNamePostfix);
-                ByteArrayInputStream resultInputStream = new ByteArrayInputStream(new byte[urlConnection.getContentLength() * 10]);
-                try(InputStream inputStream = wrapInputStream(urlConnection.getContentEncoding(), urlConnection.getInputStream());
-                    OutputStream outputStream = new BufferedOutputStream(Files
-                            .newOutputStream(Paths.get(outputDir,
-                                    strOutputFileName + generateFileExtendedName(urlConnection.getContentType()))), bufferSize)) {
-                    byte[] buffer = new byte[bufferSize];
-                    int count = 0;
-                    int countSum = 0;
-                    while ((count = inputStream.read(buffer)) > 0) {
-                        countSum += count;
-                        outputStream.write(buffer, 0, count); // incorrect logic
-                    }
-                    log.info("The total size of input bytes is {}. ", countSum);
-                }
-                return resultInputStream;
-            }
-            finally {
-                if (urlConnection != null) {
-                    urlConnection.disconnect(); // HttpURLConnection
-                }
-            }
+            return new BufferedInputStream(Files.newInputStream(Paths.get(strFilePath)), bufferSize);
         }
         catch (IOException e) {
-            log.error("Failed to download http url {}. ", strUrl, e);
-            return null; // not good habit
+            throw new AdapterException(String.format("Failed to open input stream after transferring %s. ", strUrl), e);
         }
     }
 
@@ -188,7 +157,7 @@ public class JdkHttpDownloaderAdapter implements HttpDownloaderPort {
     private void printResponseHttpHeaders(HttpURLConnection urlConnection) {
         Map<String, List<String>> repsonseHeaders = urlConnection.getHeaderFields();
         for (Map.Entry<String, List<String>> header : repsonseHeaders.entrySet()) {
-            log.info("Header {}={}", header.getKey(), header.getValue());
+            log.debug("Header {}={}", header.getKey(), header.getValue());
         }
     }
 
