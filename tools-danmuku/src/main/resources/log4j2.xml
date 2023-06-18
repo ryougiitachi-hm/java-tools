@@ -80,7 +80,7 @@
 	<Properties>
 		<Property name="APP_NAME">tools-danmuku</Property>
 		<Property name="APP_HOME_LOG">log</Property>
-		<Property name="PATTERN_LAYOUT_DEFAULT">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t][%-5level][%X{trace-id}][%logger] - %msg %n</Property>
+		<Property name="PATTERN_LAYOUT_DEFAULT">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t][%-5level][%X{x-request-id}][%logger] - %msg %n</Property>
 	</Properties>
 	<Appenders>
 		<Console name="Console" target="SYSTEM_OUT">
