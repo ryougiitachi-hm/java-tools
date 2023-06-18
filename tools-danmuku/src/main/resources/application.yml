@@ -17,6 +17,9 @@ app:
       "bilibili.tv": bilibili
       # tencent video
       "v.qq.com": tencent-video
+  generator:
+    id-generator:
+      strategy: uuid
 infra:
   http:
     strategy: JDK
@@ -47,4 +50,3 @@ infra:
       # xml
       "application/xml": .xml
       "text/xml": .xml
-
