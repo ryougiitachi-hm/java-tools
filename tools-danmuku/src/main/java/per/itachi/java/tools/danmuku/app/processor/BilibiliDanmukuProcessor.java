@@ -80,6 +80,7 @@ public class BilibiliDanmukuProcessor implements DanmukuProcessor {
             DanmukuOutputDTO danmukuOutputDTO = new DanmukuOutputDTO();
             danmukuOutputDTO.setDanmukuOutputFile(strDanmukuFilePath);
             log.info("danmukuOutputDTO={}", danmukuOutputDTO);
+            // parse danmaku list from xml danmaku file
         }
         catch (JsonProcessingException e) {
             log.error("Error occurred when parsing json. ", e);

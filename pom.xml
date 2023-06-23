@@ -20,6 +20,7 @@
         <mockito.version>4.3.1</mockito.version>
         <slf4j.version>1.7.25</slf4j.version>
         <log4j2.version>2.17.1</log4j2.version>
+        <commons.digester3.version>3.2</commons.digester3.version>
         <lombok.version>1.18.20</lombok.version>
         <brotli.version>0.1.2</brotli.version>
         <google.protobuf.version>3.23.1</google.protobuf.version>
@@ -64,6 +65,11 @@
                 <version>${log4j2.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-digester3</artifactId>
+                <version>${commons.digester3.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.brotli</groupId>
