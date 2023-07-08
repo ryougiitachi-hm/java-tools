@@ -4,6 +4,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.annotation.Resource;
@@ -11,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import per.itachi.java.tools.danmuku.app.dto.UrlInfoDTO;
 import per.itachi.java.tools.danmuku.app.exception.AppException;
+import per.itachi.java.tools.danmuku.app.pipeline.PipelineContext;
+import per.itachi.java.tools.danmuku.app.pipeline.PipelineManager;
 import per.itachi.java.tools.danmuku.app.processor.DanmukuProcessorSelector;
 import per.itachi.java.tools.danmuku.app.service.DanmukuService;
 
@@ -23,6 +26,9 @@ public class DanmukuServiceImpl implements DanmukuService {
 
     @Resource
     private DanmukuProcessorSelector danmukuProcessorSelector;
+
+    @Resource
+    private PipelineManager pipelineManager;
 
     @Override
     public void process(String strUrl) {
@@ -64,5 +70,14 @@ public class DanmukuServiceImpl implements DanmukuService {
             log.error("Error occurred. ", e);
             throw new AppException("Error occurred. ", e);
         }
+    }
+
+    @Override
+    public void convertTencent2BilibiliDanmaku(String inputFilePath) {
+        Map<String, String> inputContextParams = new HashMap<>();
+        inputContextParams.put(PipelineContext.CONTEXT_PARAM_TENCENT_DANMAKU_FILE_PATH, inputFilePath);
+        Map<String, String> outputContextParams = pipelineManager
+                .performPipeline("convert-tencent-to-bilibili-danmaku", inputContextParams);
+        log.info("outputContextParams={}", outputContextParams);
     }
 }

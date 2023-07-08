@@ -11,6 +11,9 @@ import lombok.ToString;
 @ToString
 public class TencentvBarrageJson {
 
+    /**
+     * danmaku id
+     * */
     @JsonProperty
     private String id;
 
@@ -24,7 +27,7 @@ public class TencentvBarrageJson {
      * The time point when this piece of danmuku should appear, ms.
      * */
     @JsonProperty("time_offset")
-    private String timeOffset;
+    private BigDecimal timeOffset;
 
     @JsonProperty("up_count")
     private String upCount;
@@ -53,6 +56,9 @@ public class TencentvBarrageJson {
     @JsonProperty("create_time")
     private String createTime;
 
+    /**
+     * danmaku actual content
+     * */
     @JsonProperty
     private String content;
 

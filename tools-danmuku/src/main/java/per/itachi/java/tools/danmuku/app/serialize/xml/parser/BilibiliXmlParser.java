@@ -3,12 +3,21 @@ package per.itachi.java.tools.danmuku.app.serialize.xml.parser;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Writer;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
+import javax.xml.stream.XMLEventWriter;
+import javax.xml.stream.XMLOutputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamWriter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.digester3.Digester;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -40,6 +49,9 @@ public class BilibiliXmlParser implements XmlParser {
     private static final int FLD_IDX_DANMAKU_ID = 7;
 
     private static final int FLD_IDX_UNKNOWN_RESERVED_08 = 8;
+
+    @Value("${app.common.danmaku-output-dir}")
+    private String danmakuOutputDir;
 
     @Override
     public String getStrategyName() {
@@ -118,4 +130,59 @@ public class BilibiliXmlParser implements XmlParser {
         return result;
     }
 
+    @Override
+    public String writeObjectToXml(Object xmlObject, String outputFileName) {
+        if (!(xmlObject instanceof BilibiliIXmlData bilibiliIXmlData)) {
+            throw new AppException(String.format(
+                    "xmlObject is not BilibiliIXmlData instance, actually %s", xmlObject.getClass()));
+        }
+        XMLOutputFactory xof = XMLOutputFactory.newInstance();
+//        XMLOutputFactory xof = XMLOutputFactory.newFactory(); // the same manner as above
+        Path outputFilePath = Paths.get(danmakuOutputDir, outputFileName);
+        try(Writer br = Files.newBufferedWriter(outputFilePath, StandardCharsets.UTF_8)) {
+            // XMLEventWriter
+            XMLStreamWriter xew = xof.createXMLStreamWriter(br);
+            try {
+                int count = 0; // TODO: dirty
+                xew.writeStartDocument(StandardCharsets.UTF_8.name(), "1.0"); // start document
+                xew.writeStartElement("i"); // start /i
+                writeHeaderElement(xew, "chatserver", "chat.bilibili.com"); // write /i/chatserver
+//                writeHeaderElement(xew, "chatid", "0"); // write /i/chatid
+                writeHeaderElement(xew, "mission", "0"); // write /i/mission
+//                writeHeaderElement(xew, "maxlimit", "6000"); // write /i/maxlimit
+                writeHeaderElement(xew, "state", "0"); // write /i/state
+                writeHeaderElement(xew, "real_name", "0"); // write /i/real_name
+                writeHeaderElement(xew, "source", "k-v"); // write /i/source
+                for (BilibiliDXmlData bilibiliDXmlData : bilibiliIXmlData.getDataList()) {
+                    xew.writeStartElement("d"); // start /i/d
+                    xew.writeAttribute("p", bilibiliDXmlData.getP());
+                    xew.writeCharacters(bilibiliDXmlData.getText());
+                    xew.writeEndElement(); // end /i/d
+                    // flussh
+                    ++ count;
+                    if (count >= 200) {
+                        xew.flush();
+                    }
+                }
+                xew.writeEndElement(); // end /i
+                xew.writeEndDocument(); // end document
+            }
+            finally {
+                xew.close();
+            }
+        }
+        catch (XMLStreamException | IOException e) {
+            log.error("Error occurred when writing bilibili danmaku xml file, outputFileName={}. ",
+                    outputFileName, e);
+        }
+        // TODO: what if any error is thrown.
+        return outputFilePath.toAbsolutePath().toString();
+    }
+
+    private void writeHeaderElement(XMLStreamWriter xew, String elementName, String elementValue)
+            throws XMLStreamException {
+        xew.writeStartElement(elementName);
+        xew.writeCharacters(elementValue);
+        xew.writeEndElement();
+    }
 }

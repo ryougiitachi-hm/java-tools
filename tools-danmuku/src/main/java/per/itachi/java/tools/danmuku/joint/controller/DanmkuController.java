@@ -25,4 +25,11 @@ public class DanmkuController {
         danmukuService.process(decodedUrl);
     }
 
+    @GetMapping("/conversions/tencent2bilibili")
+    public void convertTencent2BilibiliDanmaku(@RequestParam String inputFilePath) {
+        String decodedPath = URLDecoder.decode(inputFilePath, StandardCharsets.UTF_8);
+        log.info("inputFilePath={}, decodedPath={}", inputFilePath, decodedPath);
+        danmukuService.convertTencent2BilibiliDanmaku(decodedPath);
+    }
+
 }

@@ -26,10 +26,21 @@ public class XmlParserSelector {
     }
 
     public Object parseXmlAsObject(String strategy, String xmlFilePath) {
+        XmlParser xmlParser = findXmlParser(strategy);
+        return xmlParser.parseXmlAsObject(xmlFilePath);
+    }
+
+    public String writeObjectToXml(String strategy, Object xmlObject, String outputFileName) {
+        XmlParser xmlParser = findXmlParser(strategy);
+        return xmlParser.writeObjectToXml(xmlObject, outputFileName);
+    }
+
+    private XmlParser findXmlParser(String strategy) {
         XmlParser xmlParser = xmlParserMap.get(strategy);
         if (xmlParser == null) {
             throw new InvalidStrategyException("");
         }
-        return xmlParser.parseXmlAsObject(xmlFilePath);
+        return xmlParser;
     }
+
 }

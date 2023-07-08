@@ -5,4 +5,6 @@ public interface DanmukuService {
     void process(String url);
 
     void process(String url, String portal);
+
+    void convertTencent2BilibiliDanmaku(String inputFilePath);
 }

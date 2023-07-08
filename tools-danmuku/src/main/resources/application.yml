@@ -1,4 +1,6 @@
 app:
+  common:
+    danmakuOutputDir: ~
   processor:
     # maybe these technical parameters can be moved to infra.
     bufferSize: 32768
@@ -20,6 +22,21 @@ app:
   generator:
     id-generator:
       strategy: uuid
+  pipeline:
+    items:
+      bilibili:
+        pipe-list: ~
+        input-context-params:
+        output-context-params:
+      # This "convert-tencent-to-bilibili-danmaku" is pipeline name instead of pipe name
+      # Don't be confused.
+      convert-tencent-to-bilibili-danmaku:
+        pipe-list:
+        - convert-tencent-to-bilibili-danmaku
+        input-context-params:
+        - TENCENT_DANMAKU_FILE_PATH
+        output-context-params:
+        - BILIBILI_DANMAKU_FILE_PATH
 infra:
   http:
     strategy: JDK
